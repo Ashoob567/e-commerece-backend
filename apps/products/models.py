@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import models
+from django.conf import settings
 
 
 class ProductTag(models.Model):
@@ -139,3 +140,31 @@ class ProductVariant(models.Model):
     @property
     def is_in_stock(self):
         return self.stock_qty > 0
+
+class Review(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="reviews",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="reviews",
+    )
+    rating = models.PositiveSmallIntegerField(
+        choices=[(i, i) for i in range(1, 6)],
+    )
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("product", "user")
+        ordering = ["-created_at"]
+        verbose_name = "Review"
+        verbose_name_plural = "Reviews"
+
+    def __str__(self):
+        return f"{self.user} — {self.product.name} ({self.rating}★)"
