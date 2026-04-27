@@ -19,9 +19,22 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class ProductImageSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+
     class Meta:
         model = ProductImage
-        fields = ["id", "image", "alt_text", "is_primary", "order"]
+        fields = ["id", "image", "url", "alt_text", "is_primary", "order"]
+
+    def get_url(self, obj):
+        """Return the Supabase public URL."""
+        if obj.image_url:
+            return obj.image_url
+        if obj.image:
+            try:
+                return obj.image.url
+            except Exception:
+                return None
+        return None
 
 
 class ProductVariantSerializer(serializers.ModelSerializer):

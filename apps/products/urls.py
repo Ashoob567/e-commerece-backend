@@ -8,6 +8,7 @@ from .views import (
     NewArrivalsView,
     BestsellersView,
     CategoryProductsView,
+    ProductImageUploadView,
 )
 
 app_name = "products"
@@ -19,6 +20,7 @@ urlpatterns = [
     path("new-arrivals/", NewArrivalsView.as_view(), name="new-arrivals"),
     path("bestsellers/", BestsellersView.as_view(), name="bestsellers"),
     path("<slug:slug>/", ProductDetailView.as_view(), name="product-detail"),
+    path("<uuid:pk>/images/", ProductImageUploadView.as_view(), name="product-image-upload"),
 
     # Category endpoints — registered under /api/products/ AND mirrored
     # via config/urls.py at /api/categories/ (see note below)

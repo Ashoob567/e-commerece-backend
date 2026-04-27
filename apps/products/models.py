@@ -1,7 +1,14 @@
 import uuid
+import logging
 
 from django.db import models
 from django.conf import settings
+
+
+def get_supabase_storage():
+    """Return a SupabaseStorage instance for use in model fields."""
+    from utils.storage import SupabaseStorage
+    return SupabaseStorage()
 
 
 class ProductTag(models.Model):
@@ -94,7 +101,13 @@ class ProductImage(models.Model):
         on_delete=models.CASCADE,
         related_name="images",
     )
-    image = models.ImageField(upload_to="products/")
+    image = models.ImageField(
+        upload_to="products/images/",
+        storage=get_supabase_storage,
+        null=True,
+        blank=True
+    )
+    image_url = models.CharField(max_length=500, blank=True, default="")
     alt_text = models.CharField(max_length=200, blank=True)
     is_primary = models.BooleanField(default=False)
     order = models.PositiveIntegerField(default=0)
@@ -106,6 +119,16 @@ class ProductImage(models.Model):
 
     def __str__(self):
         return f"Image for {self.product.name}"
+
+    def save(self, *args, **kwargs):
+        """Auto-generate image_url from image field after upload."""
+        if self.image and not self.image_url:
+            try:
+                self.image_url = self.image.url
+            except Exception as e:
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error getting image URL: {e}")
+        super().save(*args, **kwargs)
 
 
 class ProductVariant(models.Model):
