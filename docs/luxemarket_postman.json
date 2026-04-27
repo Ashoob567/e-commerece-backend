@@ -1,0 +1,489 @@
+{
+  "info": {
+    "_postman_id": "luxe-market-collection-v1",
+    "name": "Luxe Market API",
+    "description": "Complete API collection for the Luxe Market Django 5 e-commerce platform. Covers authentication, product browsing, and category management.\n\n**Setup:**\n1. Set `base_url` to `http://localhost:8000` (already configured).\n2. Call **Login** — the pre-request script auto-saves the access token.\n3. All protected routes use `{{access_token}}` automatically.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string",
+      "description": "Base URL for the Luxe Market API server."
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string",
+      "description": "JWT access token. Populated automatically after a successful Login request."
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Endpoints for user registration, login, logout, token refresh, and profile management.",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Sophia\",\n  \"last_name\": \"Bennett\",\n  \"email\": \"sophia.bennett@example.com\",\n  \"password\": \"SecurePass@2024\",\n  \"password_confirm\": \"SecurePass@2024\"\n}"
+            },
+            "description": "Creates a new user account. Returns the created user object along with JWT access and refresh tokens."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"user\": {\n    \"id\": 1,\n    \"first_name\": \"Sophia\",\n    \"last_name\": \"Bennett\",\n    \"email\": \"sophia.bennett@example.com\",\n    \"date_joined\": \"2024-06-01T10:00:00Z\"\n  },\n  \"access\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"refresh\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.access) {",
+                  "    pm.collectionVariables.set('access_token', json.access);",
+                  "    console.log('✅ access_token saved to collection variables.');",
+                  "} else {",
+                  "    console.warn('⚠️  No access token found in response.');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"sophia.bennett@example.com\",\n  \"password\": \"SecurePass@2024\"\n}"
+            },
+            "description": "Authenticates a user with email and password. On success the **Tests** script automatically saves the returned `access` token into the `{{access_token}}` collection variable for use in all protected requests."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"access\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"refresh\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"user\": {\n    \"id\": 1,\n    \"email\": \"sophia.bennett@example.com\",\n    \"first_name\": \"Sophia\",\n    \"last_name\": \"Bennett\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+            },
+            "description": "Blacklists the provided refresh token, effectively logging the user out. Requires a valid access token in the Authorization header."
+          },
+          "response": [
+            {
+              "name": "205 Reset Content",
+              "status": "Reset Content",
+              "code": 205,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"detail\": \"Successfully logged out.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/token/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "token", "refresh"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+            },
+            "description": "Issues a new short-lived access token using a valid refresh token. Use this when the access token expires (typically after 5–15 minutes)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"access\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Returns the profile details of the currently authenticated user. Requires a valid Bearer token."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"id\": 1,\n  \"first_name\": \"Sophia\",\n  \"last_name\": \"Bennett\",\n  \"email\": \"sophia.bennett@example.com\",\n  \"phone\": \"+1-555-0199\",\n  \"date_joined\": \"2024-06-01T10:00:00Z\",\n  \"is_active\": true\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me/update",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me", "update"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Sophia\",\n  \"last_name\": \"Clarke\",\n  \"phone\": \"+1-555-0199\",\n  \"address\": {\n    \"street\": \"742 Evergreen Terrace\",\n    \"city\": \"Springfield\",\n    \"state\": \"IL\",\n    \"zip\": \"62704\",\n    \"country\": \"US\"\n  }\n}"
+            },
+            "description": "Updates profile fields for the authenticated user. Only provided fields are changed (partial updates also accepted via PATCH if supported)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"id\": 1,\n  \"first_name\": \"Sophia\",\n  \"last_name\": \"Clarke\",\n  \"email\": \"sophia.bennett@example.com\",\n  \"phone\": \"+1-555-0199\",\n  \"address\": {\n    \"street\": \"742 Evergreen Terrace\",\n    \"city\": \"Springfield\",\n    \"state\": \"IL\",\n    \"zip\": \"62704\",\n    \"country\": \"US\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/change-password",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "change-password"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"old_password\": \"SecurePass@2024\",\n  \"new_password\": \"NewSecurePass@2025\",\n  \"new_password_confirm\": \"NewSecurePass@2025\"\n}"
+            },
+            "description": "Changes the password for the authenticated user. Requires the current password for verification. All existing refresh tokens are invalidated after a successful change."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"detail\": \"Password updated successfully.\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "description": "Endpoints for listing product categories and browsing products within a category.",
+      "item": [
+        {
+          "name": "List All Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories"]
+            },
+            "description": "Returns a flat list of all active product categories. No authentication required. Useful for building navigation menus."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"count\": 3,\n  \"results\": [\n    {\n      \"id\": 1,\n      \"name\": \"Watches\",\n      \"slug\": \"watches\",\n      \"description\": \"Luxury timepieces from the world's finest brands.\",\n      \"image\": \"https://cdn.luxemarket.com/categories/watches.jpg\",\n      \"product_count\": 48\n    },\n    {\n      \"id\": 2,\n      \"name\": \"Handbags\",\n      \"slug\": \"handbags\",\n      \"description\": \"Designer handbags crafted with premium materials.\",\n      \"image\": \"https://cdn.luxemarket.com/categories/handbags.jpg\",\n      \"product_count\": 35\n    },\n    {\n      \"id\": 3,\n      \"name\": \"Jewellery\",\n      \"slug\": \"jewellery\",\n      \"description\": \"Fine jewellery for every occasion.\",\n      \"image\": \"https://cdn.luxemarket.com/categories/jewellery.jpg\",\n      \"product_count\": 22\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Category by Slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/categories/watches",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories", "watches"]
+            },
+            "description": "Returns details for a single category identified by its URL slug. Replace `watches` in the path with the desired category slug."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"id\": 1,\n  \"name\": \"Watches\",\n  \"slug\": \"watches\",\n  \"description\": \"Luxury timepieces from the world's finest brands.\",\n  \"image\": \"https://cdn.luxemarket.com/categories/watches.jpg\",\n  \"product_count\": 48,\n  \"created_at\": \"2024-01-15T08:00:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Products in Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/categories/watches/products",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories", "watches", "products"],
+              "query": [
+                { "key": "page", "value": "1", "disabled": true },
+                { "key": "page_size", "value": "12", "disabled": true },
+                { "key": "ordering", "value": "-created_at", "disabled": true }
+              ]
+            },
+            "description": "Returns a paginated list of products belonging to the given category slug. Supports optional query params: `page`, `page_size`, and `ordering`."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"count\": 48,\n  \"next\": \"http://localhost:8000/api/categories/watches/products?page=2\",\n  \"previous\": null,\n  \"results\": [\n    {\n      \"id\": 7,\n      \"name\": \"Royal Oak Selfwinding\",\n      \"slug\": \"royal-oak-selfwinding\",\n      \"brand\": \"Audemars Piguet\",\n      \"price\": \"29500.00\",\n      \"sale_price\": null,\n      \"thumbnail\": \"https://cdn.luxemarket.com/products/royal-oak-thumb.jpg\",\n      \"is_in_stock\": true,\n      \"rating\": 4.9\n    }\n  ]\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "description": "Endpoints for browsing, searching, and managing products, including featured items, new arrivals, bestsellers, and image uploads.",
+      "item": [
+        {
+          "name": "List All Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"],
+              "query": [
+                { "key": "page", "value": "1", "disabled": true },
+                { "key": "page_size", "value": "12", "disabled": true },
+                { "key": "search", "value": "rolex", "disabled": true },
+                { "key": "category", "value": "watches", "disabled": true },
+                { "key": "min_price", "value": "500", "disabled": true },
+                { "key": "max_price", "value": "50000", "disabled": true },
+                { "key": "ordering", "value": "-created_at", "disabled": true }
+              ]
+            },
+            "description": "Returns a paginated list of all active products. Supports optional query filters: `search`, `category` (slug), `min_price`, `max_price`, `ordering`, `page`, and `page_size`."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"count\": 105,\n  \"next\": \"http://localhost:8000/api/products?page=2\",\n  \"previous\": null,\n  \"results\": [\n    {\n      \"id\": 1,\n      \"name\": \"Submariner Date\",\n      \"slug\": \"submariner-date\",\n      \"brand\": \"Rolex\",\n      \"category\": \"Watches\",\n      \"price\": \"14500.00\",\n      \"sale_price\": \"13800.00\",\n      \"thumbnail\": \"https://cdn.luxemarket.com/products/submariner-thumb.jpg\",\n      \"is_in_stock\": true,\n      \"is_featured\": false,\n      \"rating\": 4.8,\n      \"review_count\": 214\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Product by Slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/submariner-date",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "submariner-date"]
+            },
+            "description": "Returns full details for a single product identified by its URL slug. Replace `submariner-date` in the path with the target product slug."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"id\": 1,\n  \"name\": \"Submariner Date\",\n  \"slug\": \"submariner-date\",\n  \"brand\": \"Rolex\",\n  \"category\": {\n    \"id\": 1,\n    \"name\": \"Watches\",\n    \"slug\": \"watches\"\n  },\n  \"description\": \"The Submariner Date is a reference among divers' watches. Waterproof to a depth of 300 metres.\",\n  \"price\": \"14500.00\",\n  \"sale_price\": \"13800.00\",\n  \"sku\": \"RLX-SUB-126610LN\",\n  \"stock_quantity\": 4,\n  \"is_in_stock\": true,\n  \"is_featured\": false,\n  \"rating\": 4.8,\n  \"review_count\": 214,\n  \"images\": [\n    {\n      \"id\": 10,\n      \"url\": \"https://cdn.luxemarket.com/products/submariner-1.jpg\",\n      \"alt_text\": \"Submariner Date front view\",\n      \"is_primary\": true\n    }\n  ],\n  \"created_at\": \"2024-03-10T12:00:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Featured Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/featured",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "featured"]
+            },
+            "description": "Returns the curated list of products marked as featured. Ideal for homepage hero sections and promotional banners."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"count\": 6,\n  \"results\": [\n    {\n      \"id\": 3,\n      \"name\": \"Nautilus 5711\",\n      \"slug\": \"nautilus-5711\",\n      \"brand\": \"Patek Philippe\",\n      \"price\": \"89000.00\",\n      \"sale_price\": null,\n      \"thumbnail\": \"https://cdn.luxemarket.com/products/nautilus-thumb.jpg\",\n      \"is_in_stock\": true,\n      \"is_featured\": true,\n      \"rating\": 5.0\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "New Arrivals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/new-arrivals",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "new-arrivals"]
+            },
+            "description": "Returns the most recently added products, sorted by creation date descending. Useful for a \"What's New\" section."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"count\": 10,\n  \"results\": [\n    {\n      \"id\": 42,\n      \"name\": \"Birkin 30 Togo Leather\",\n      \"slug\": \"birkin-30-togo-leather\",\n      \"brand\": \"Hermès\",\n      \"price\": \"24000.00\",\n      \"sale_price\": null,\n      \"thumbnail\": \"https://cdn.luxemarket.com/products/birkin-thumb.jpg\",\n      \"is_in_stock\": true,\n      \"created_at\": \"2024-05-28T09:00:00Z\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Bestsellers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/bestsellers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "bestsellers"]
+            },
+            "description": "Returns the top-selling products ranked by total units sold. Great for social-proof sections on the storefront."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"count\": 10,\n  \"results\": [\n    {\n      \"id\": 1,\n      \"name\": \"Submariner Date\",\n      \"slug\": \"submariner-date\",\n      \"brand\": \"Rolex\",\n      \"price\": \"14500.00\",\n      \"sale_price\": \"13800.00\",\n      \"thumbnail\": \"https://cdn.luxemarket.com/products/submariner-thumb.jpg\",\n      \"is_in_stock\": true,\n      \"units_sold\": 512,\n      \"rating\": 4.8\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Upload Product Images",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products/1/images",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "1", "images"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": "",
+                  "description": "The image file to upload (JPEG, PNG, or WebP recommended)."
+                },
+                {
+                  "key": "alt_text",
+                  "value": "Submariner Date side profile",
+                  "type": "text"
+                },
+                {
+                  "key": "is_primary",
+                  "value": "false",
+                  "type": "text"
+                }
+              ]
+            },
+            "description": "Uploads one or more images for a product identified by its numeric `id`. Uses `multipart/form-data` — **do not** set Content-Type manually; Postman sets it automatically with the correct boundary. Requires admin/staff authentication."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"id\": 11,\n  \"product\": 1,\n  \"url\": \"https://cdn.luxemarket.com/products/submariner-side.jpg\",\n  \"alt_text\": \"Submariner Date side profile\",\n  \"is_primary\": false,\n  \"uploaded_at\": \"2024-06-01T14:30:00Z\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
